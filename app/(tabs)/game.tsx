@@ -1,9 +1,10 @@
-import React, { useState, useEffect} from 'react';
+import React, { useState, useEffect, useCallback} from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, ActivityIndicator, Modal } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import Svg, { Path } from 'react-native-svg';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { useFocusEffect } from '@react-navigation/native';
 
 const QUESTION_TIME = 5; // 5 seconds for each question
 const pre_a1_starters_word_map: { [key: string]: string } = {
@@ -517,7 +518,11 @@ const GamePage: React.FC = () => {
         console.error('Error reading high score:', error);
       }
     };
-  
+    const handleGoToMainMenu = () => {
+      setIsGameOver(false); // Modal'ı kapat
+      if (timer) clearInterval(timer);
+      router.replace('/');  // Ana menü sayfasının yolunu buraya yazın
+    };
     const updateHighScore = async (newScore: number) => {
       if (newScore > highScore) {
         setHighScore(newScore);
@@ -581,12 +586,13 @@ const GamePage: React.FC = () => {
     const handleTimerExpired = () => {
       setLives(prevLives => {
         const newLives = prevLives - 1;
-        if (newLives === 0) {
+        if (newLives <= 0) {
           endGame();
+          return 0;
         } else {
           fetchNextQuestion();
+          return newLives;
         }
-        return newLives;
       });
     };
   
@@ -606,21 +612,29 @@ const GamePage: React.FC = () => {
       } else {
         setLives(prevLives => {
           const newLives = prevLives - 1;
-          if (newLives === 0) {
+          if (newLives <= 0) {
             endGame();
+            return 0;
           } else {
             fetchNextQuestion();
+            return newLives;
           }
-          return newLives;
         });
       }
     };
-  
-    const resetGame = () => {
+
+    const initializeGame = useCallback(() => {
       setLives(3);
       setScore(0);
       setIsGameOver(false);
+      setTimeLeft(QUESTION_TIME);
+      if (timer) clearInterval(timer);
       fetchNextQuestion();
+    }, []);;
+
+    const resetGame = () => {
+      setIsGameOver(false);
+      initializeGame();
     };
     
     const endGame = () => {
@@ -631,11 +645,11 @@ const GamePage: React.FC = () => {
 
     useEffect(() => {
       getHighScore();
-      fetchNextQuestion();
+      initializeGame();
       return () => {
         if (timer) clearInterval(timer);
       };
-    }, []);
+    }, [initializeGame]);
 
     useEffect(() => {
       if (lives === 0) {
@@ -643,6 +657,11 @@ const GamePage: React.FC = () => {
       }
     }, [lives]);
 
+    useFocusEffect(
+      useCallback(() => {
+        initializeGame();
+      }, [initializeGame])
+    );
     if (isLoading) {
       return (
         <View style={styles.container}>
@@ -707,6 +726,9 @@ const GamePage: React.FC = () => {
               <TouchableOpacity style={styles.modalButton} onPress={resetGame}>
                 <Text style={styles.modalButtonText}>Yeniden Başla</Text>
               </TouchableOpacity>
+              <TouchableOpacity style={styles.modalButton} onPress={handleGoToMainMenu}>
+              <Text style={styles.modalButtonText}>Ana Menüye Dön</Text>
+              </TouchableOpacity>
             </View>
           </View>
         </Modal>
@@ -760,14 +782,13 @@ const styles = StyleSheet.create({
       borderRadius: 10,
     },
     infoText: {
-      fontSize: 18,
+      fontSize: 25,
       fontWeight: 'bold',
     },
     word: {
-      fontSize: 36,
+      fontSize: 50,
       fontWeight: 'bold',
       textAlign: 'center',
-      marginBottom: 50,
     },
     optionsContainer: {
       width: '100%',
@@ -780,7 +801,8 @@ const styles = StyleSheet.create({
     },
     optionButton: {
       backgroundColor: 'yellow',
-      padding: 15,
+      padding: 25,
+      top: 150,
       borderRadius: 10,
       width: '48%',
       alignItems: 'center',
@@ -810,15 +832,6 @@ const styles = StyleSheet.create({
       fontSize: 18,
       marginBottom: 20,
     },
-    modalButton: {
-      backgroundColor: 'yellow',
-      padding: 10,
-      borderRadius: 5,
-    },
-    modalButtonText: {
-      fontSize: 16,
-      fontWeight: 'bold',
-    },
     heart: {
       marginHorizontal: 2,
       borderWidth: 1,
@@ -836,7 +849,19 @@ const styles = StyleSheet.create({
     highScoreText: {
       fontSize: 16,
       fontWeight: 'bold',
-    }
+    },
+    modalButton: {
+      backgroundColor: 'yellow',
+      padding: 10,
+      borderRadius: 5,
+      marginTop: 10,  // Add some space between buttons
+      width: '100%',  // Make buttons full width
+      alignItems: 'center',
+    },
+    modalButtonText: {
+      fontSize: 16,
+      fontWeight: 'bold',
+    },
   });
 
 export default GamePage;
