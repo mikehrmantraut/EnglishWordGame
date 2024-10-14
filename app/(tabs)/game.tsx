@@ -26,6 +26,8 @@ const GamePage: React.FC = () => {
     const [isGameOver, setIsGameOver] = useState(false);
     const [timer, setTimer] = useState<NodeJS.Timeout | null>(null);
     const [highScore, setHighScore] = useState(0);
+    const [progressWidth, setProgressWidth] = useState(0);
+    const [progressColor, setProgressColor] = useState('green');
   
     const handleGoBack = () => {
       router.back();
@@ -90,7 +92,7 @@ const GamePage: React.FC = () => {
       return allOptions.sort(() => Math.random() - 0.5);
     };
   
-    const startTimer = () => {
+    const startTimer = useCallback(() => {
       if (timer) clearInterval(timer);
       setTimeLeft(QUESTION_TIME);
       const newTimer = setInterval(() => {
@@ -104,9 +106,10 @@ const GamePage: React.FC = () => {
         });
       }, 1000);
       setTimer(newTimer);
-    };
+    }, []);
   
-    const handleTimerExpired = () => {
+    const handleTimerExpired = useCallback(() => {
+      if (timer) clearInterval(timer);
       setLives(prevLives => {
         const newLives = prevLives - 1;
         if (newLives <= 0) {
@@ -117,20 +120,33 @@ const GamePage: React.FC = () => {
           return newLives;
         }
       });
-    };
+    }, [timer]);
   
-    const fetchNextQuestion = async () => {
+    const fetchNextQuestion = useCallback(async () => {
+      if (timer) clearInterval(timer);
       const newWord = getRandomWord();
       setCurrentWord(newWord);
       const newOptions = await generateOptions(newWord);
       setOptions(newOptions);
       startTimer();
+    }, [timer, startTimer]);
+    const updateProgress = () => {
+      setProgressWidth(prevWidth => {
+        const newWidth = prevWidth + 20;
+        if (newWidth <= 20) setProgressColor('#9FE2BF');
+        else if (newWidth <= 40) setProgressColor('#FFD700');
+        else if (newWidth <= 60) setProgressColor('orange');
+        else if (newWidth <= 80) setProgressColor('red');
+        else setProgressColor('#C71585');
+        return newWidth > 100 ? 100 : newWidth;
+      });
     };
   
-    const handleOptionSelect = async (selectedOption: Option) => {
+    const handleOptionSelect = useCallback(async (selectedOption: Option) => {
       if (timer) clearInterval(timer);
       if (selectedOption.isCorrect) {
-        setScore(prevScore => prevScore + 100);
+        setScore(prevScore => prevScore + gameSettings.pointsPerCorrectAnswer);
+        updateProgress();
         await fetchNextQuestion();
       } else {
         setLives(prevLives => {
@@ -144,7 +160,13 @@ const GamePage: React.FC = () => {
           }
         });
       }
-    };
+    }, [timer, fetchNextQuestion]);
+    
+    useEffect(() => {
+      return () => {
+        if (timer) clearInterval(timer);
+      };
+    }, [timer]);
 
     const initializeGame = useCallback(() => {
       setLives(3);
@@ -158,6 +180,8 @@ const GamePage: React.FC = () => {
     const resetGame = () => {
       setIsGameOver(false);
       initializeGame();
+      setProgressWidth(0);
+      setProgressColor('green');
     };
     
     const endGame = () => {
@@ -194,74 +218,76 @@ const GamePage: React.FC = () => {
       );
     }
   
-    return (
-      <View style={styles.container}>
-              <View style={styles.copyrightContainer}>
-        <Text style={styles.copyrightText}>
-          © {new Date().getFullYear()} Tüm hakları MBM'ye aittir.
-        </Text>
+return (
+  <View style={styles.container}>
+    <View style={styles.copyrightContainer}>
+      <Text style={styles.copyrightText}>
+        © {new Date().getFullYear()} Tüm hakları MBM'ye aittir.
+      </Text>
+    </View>
+    <TouchableOpacity style={styles.backButton} onPress={handleGoBack}>
+      <Ionicons name="arrow-back" size={24} color="black" />
+      <Text style={styles.backButtonText}>Menüye Dön</Text>
+    </TouchableOpacity>
+    <View style={styles.highScoreContainer}>
+      <Text style={styles.highScoreText}>En Yüksek Skor: {highScore}</Text>
+    </View>
+    <View style={styles.topInfoContainer}>
+      <Text style={styles.infoText}>Skor: {score}</Text>
+      <View style={styles.progressBarContainer}>
+        <View             style={[
+              styles.progressBar, 
+              { width: `${progressWidth}%`, backgroundColor: progressColor }
+            ]} />
       </View>
-        <TouchableOpacity style={styles.backButton} onPress={handleGoBack}>
-          <Ionicons name="arrow-back" size={24} color="black" />
-          <Text style={styles.backButtonText}>Menüye Dön</Text>
+      <Text style={styles.infoText}>Süre: {timeLeft}</Text>
+    </View>
+    <View style={styles.livesContainer}>
+      {[...Array(3)].map((_, index) => (
+        <View key={index} style={styles.heartContainer}>
+          <HeartIcon filled={index < lives} />
+        </View>
+      ))}
+    </View>
+    <Text style={styles.word}>{currentWord}</Text>
+    <View style={styles.optionsContainer}>
+      <View style={styles.optionsRow}>
+        <TouchableOpacity style={styles.optionButton} onPress={() => handleOptionSelect(options[0])}>
+          <Text style={styles.optionText}>{options[0]?.word || 'Seçenek 1'}</Text>
         </TouchableOpacity>
-        <View style={styles.highScoreContainer}>
-          <Text style={styles.highScoreText}>En Yüksek Skor: {highScore}</Text>
-        </View>
-        <View style={styles.livesContainer}>
-          {[...Array(3)].map((_, index) => (
-            <View key={index} style={styles.heartContainer}>
-              <HeartIcon filled={index < lives} />
-            </View>
-          ))}
-        </View>
-        <View style={styles.infoContainer}>
-          <View style={styles.scoreContainer}>
-            <Text style={styles.infoText}>Skor: {score}</Text>
-          </View>
-          <View style={styles.timerContainer}>
-            <Text style={styles.infoText}>Süre: {timeLeft}</Text>
-          </View>
-        </View>
-        <Text style={styles.word}>{currentWord}</Text>
-        <View style={styles.optionsContainer}>
-          <View style={styles.optionsRow}>
-            <TouchableOpacity style={styles.optionButton} onPress={() => handleOptionSelect(options[0])}>
-              <Text style={styles.optionText}>{options[0]?.word || 'Seçenek 1'}</Text>
-            </TouchableOpacity>
-            <TouchableOpacity style={styles.optionButton} onPress={() => handleOptionSelect(options[1])}>
-              <Text style={styles.optionText}>{options[1]?.word || 'Seçenek 2'}</Text>
-            </TouchableOpacity>
-          </View>
-          <View style={styles.optionsRow}>
-            <TouchableOpacity style={styles.optionButton} onPress={() => handleOptionSelect(options[2])}>
-              <Text style={styles.optionText}>{options[2]?.word || 'Seçenek 3'}</Text>
-            </TouchableOpacity>
-            <TouchableOpacity style={styles.optionButton} onPress={() => handleOptionSelect(options[3])}>
-              <Text style={styles.optionText}>{options[3]?.word || 'Seçenek 4'}</Text>
-            </TouchableOpacity>
-          </View>
-        </View>
-        <Modal
-          visible={isGameOver}
-          transparent={true}
-          animationType="fade"
-        >
-          <View style={styles.modalContainer}>
-            <View style={styles.modalContent}>
-              <Text style={styles.modalTitle}>Oyun Bitti!</Text>
-              <Text style={styles.modalScore}>Skorunuz: {score}</Text>
-              <TouchableOpacity style={styles.modalButton} onPress={resetGame}>
-                <Text style={styles.modalButtonText}>Yeniden Başla</Text>
-              </TouchableOpacity>
-              <TouchableOpacity style={styles.modalButton} onPress={handleGoToMainMenu}>
-              <Text style={styles.modalButtonText}>Ana Menüye Dön</Text>
-              </TouchableOpacity>
-            </View>
-          </View>
-        </Modal>
+        <TouchableOpacity style={styles.optionButton} onPress={() => handleOptionSelect(options[1])}>
+          <Text style={styles.optionText}>{options[1]?.word || 'Seçenek 2'}</Text>
+        </TouchableOpacity>
       </View>
-    );
+      <View style={styles.optionsRow}>
+        <TouchableOpacity style={styles.optionButton} onPress={() => handleOptionSelect(options[2])}>
+          <Text style={styles.optionText}>{options[2]?.word || 'Seçenek 3'}</Text>
+        </TouchableOpacity>
+        <TouchableOpacity style={styles.optionButton} onPress={() => handleOptionSelect(options[3])}>
+          <Text style={styles.optionText}>{options[3]?.word || 'Seçenek 4'}</Text>
+        </TouchableOpacity>
+      </View>
+    </View>
+    <Modal
+      visible={isGameOver}
+      transparent={true}
+      animationType="fade"
+    >
+      <View style={styles.modalContainer}>
+        <View style={styles.modalContent}>
+          <Text style={styles.modalTitle}>Oyun Bitti!</Text>
+          <Text style={styles.modalScore}>Skorunuz: {score}</Text>
+          <TouchableOpacity style={styles.modalButton} onPress={resetGame}>
+            <Text style={styles.modalButtonText}>Yeniden Başla</Text>
+          </TouchableOpacity>
+          <TouchableOpacity style={styles.modalButton} onPress={handleGoToMainMenu}>
+            <Text style={styles.modalButtonText}>Ana Menüye Dön</Text>
+          </TouchableOpacity>
+        </View>
+      </View>
+    </Modal>
+  </View>
+);
   };
 
 export default GamePage;

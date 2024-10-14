@@ -138,4 +138,25 @@ export const styles = StyleSheet.create({
       fontSize: 12,
       color: 'gray',
     },
+    topInfoContainer: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        width: '100%',
+        paddingHorizontal: 20,
+        position: 'absolute',
+        top: 140,
+      },
+      progressBarContainer: {
+        width: '45%',
+        height: 20,
+        backgroundColor: 'white',
+        borderRadius: 10,
+        overflow: 'hidden',
+      },
+      progressBar: {
+        height: '100%',
+        backgroundColor: 'green', // Bu rengi ileride değiştirebilirsiniz
+        width: '0%', // Şimdilik 0%, ileride dinamik olarak ayarlanacak
+      },
   });

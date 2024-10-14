@@ -481,4 +481,5 @@ export const pre_a1_starters_word_map: { [key: string]: string } = {
   export const gameSettings = {
     defaultQuestionTime: 5,
     defaultLives: 3,
+    pointsPerCorrectAnswer: 100
   };
