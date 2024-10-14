@@ -4,7 +4,7 @@ export const styles = StyleSheet.create({
       flex: 1,
       justifyContent: 'center',
       alignItems: 'center',
-      backgroundColor: 'white',
+      backgroundColor: '#E6F3FF',
     },
     backButton: {
       position: 'absolute',
@@ -63,7 +63,7 @@ export const styles = StyleSheet.create({
       marginBottom: 10,
     },
     optionButton: {
-      backgroundColor: 'yellow',
+      backgroundColor: 'purple',
       padding: 25,
       top: 150,
       borderRadius: 10,
@@ -73,6 +73,7 @@ export const styles = StyleSheet.create({
     optionText: {
       fontSize: 18,
       fontWeight: 'bold',
+      color: 'white'
     },
     modalContainer: {
       flex: 1,
@@ -114,7 +115,7 @@ export const styles = StyleSheet.create({
       fontWeight: 'bold',
     },
     modalButton: {
-      backgroundColor: 'yellow',
+      backgroundColor: 'green',
       padding: 10,
       borderRadius: 5,
       marginTop: 10,  // Add some space between buttons
@@ -124,6 +125,7 @@ export const styles = StyleSheet.create({
     modalButtonText: {
       fontSize: 16,
       fontWeight: 'bold',
+      color: 'white'
     },
     copyrightContainer: {
       position: 'absolute',

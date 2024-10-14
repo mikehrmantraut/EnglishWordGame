@@ -130,7 +130,7 @@ const GamePage: React.FC = () => {
     const handleOptionSelect = async (selectedOption: Option) => {
       if (timer) clearInterval(timer);
       if (selectedOption.isCorrect) {
-        setScore(prevScore => prevScore + 10);
+        setScore(prevScore => prevScore + 100);
         await fetchNextQuestion();
       } else {
         setLives(prevLives => {
