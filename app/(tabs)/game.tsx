@@ -3,6 +3,7 @@ import { View, Text, StyleSheet, TouchableOpacity, ActivityIndicator, Modal } fr
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import Svg, { Path } from 'react-native-svg';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const QUESTION_TIME = 5; // 5 seconds for each question
 const pre_a1_starters_word_map: { [key: string]: string } = {
@@ -500,11 +501,34 @@ const GamePage: React.FC = () => {
     const [lives, setLives] = useState(3);
     const [isGameOver, setIsGameOver] = useState(false);
     const [timer, setTimer] = useState<NodeJS.Timeout | null>(null);
+    const [highScore, setHighScore] = useState(0);
   
     const handleGoBack = () => {
       router.back();
     };
+
+    const getHighScore = async () => {
+      try {
+        const value = await AsyncStorage.getItem('highScore');
+        if (value !== null) {
+          setHighScore(parseInt(value));
+        }
+      } catch (error) {
+        console.error('Error reading high score:', error);
+      }
+    };
   
+    const updateHighScore = async (newScore: number) => {
+      if (newScore > highScore) {
+        setHighScore(newScore);
+        try {
+          await AsyncStorage.setItem('highScore', newScore.toString());
+        } catch (error) {
+          console.error('Error saving high score:', error);
+        }
+      }
+    };
+
     const HeartIcon: React.FC<{ filled: boolean }> = ({ filled }) => (
       <Svg height="24" width="24" viewBox="0 0 24 24">
         <Path
@@ -546,7 +570,7 @@ const GamePage: React.FC = () => {
           if (prevTime <= 1) {
             clearInterval(newTimer);
             handleTimerExpired();
-            return QUESTION_TIME;
+            return 0;
           }
           return prevTime - 1;
         });
@@ -558,7 +582,7 @@ const GamePage: React.FC = () => {
       setLives(prevLives => {
         const newLives = prevLives - 1;
         if (newLives === 0) {
-          setIsGameOver(true);
+          endGame();
         } else {
           fetchNextQuestion();
         }
@@ -583,7 +607,7 @@ const GamePage: React.FC = () => {
         setLives(prevLives => {
           const newLives = prevLives - 1;
           if (newLives === 0) {
-            setIsGameOver(true);
+            endGame();
           } else {
             fetchNextQuestion();
           }
@@ -598,21 +622,27 @@ const GamePage: React.FC = () => {
       setIsGameOver(false);
       fetchNextQuestion();
     };
-  
+    
+    const endGame = () => {
+      setIsGameOver(true);
+      if (timer) clearInterval(timer);
+      updateHighScore(score);
+    };
+
     useEffect(() => {
+      getHighScore();
       fetchNextQuestion();
       return () => {
         if (timer) clearInterval(timer);
       };
     }, []);
-  
+
     useEffect(() => {
       if (lives === 0) {
-        setIsGameOver(true);
-        if (timer) clearInterval(timer);
+        endGame();
       }
     }, [lives]);
-  
+
     if (isLoading) {
       return (
         <View style={styles.container}>
@@ -628,6 +658,9 @@ const GamePage: React.FC = () => {
           <Ionicons name="arrow-back" size={24} color="black" />
           <Text style={styles.backButtonText}>Menüye Dön</Text>
         </TouchableOpacity>
+        <View style={styles.highScoreContainer}>
+          <Text style={styles.highScoreText}>En Yüksek Skor: {highScore}</Text>
+        </View>
         <View style={styles.livesContainer}>
           {[...Array(3)].map((_, index) => (
             <View key={index} style={styles.heartContainer}>
@@ -791,6 +824,18 @@ const styles = StyleSheet.create({
       borderWidth: 1,
       borderColor: 'black',
       borderRadius: 12
+    },
+    highScoreContainer: {
+      position: 'absolute',
+      top: 80,
+      alignSelf: 'center',
+      backgroundColor: 'rgba(255, 255, 255, 0.8)',
+      padding: 10,
+      borderRadius: 10,
+    },
+    highScoreText: {
+      fontSize: 16,
+      fontWeight: 'bold',
     }
   });
 
