@@ -5,7 +5,7 @@ import { Ionicons } from '@expo/vector-icons';
 import Svg, { Path } from 'react-native-svg';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useFocusEffect } from '@react-navigation/native';
-import { styles } from '../../styles/gameStyles';
+import { game_styles } from '../../styles/gameStyles';
 import { pre_a1_starters_word_map, gameSettings } from '../../data/languageData';
 const QUESTION_TIME = gameSettings.defaultQuestionTime; // 5 seconds for each question
 
@@ -211,7 +211,7 @@ const GamePage: React.FC = () => {
     );
     if (isLoading) {
       return (
-        <View style={styles.container}>
+        <View style={game_styles.container}>
           <ActivityIndicator size="large" color="#0000ff" />
           <Text>Kelimeler yükleniyor...</Text>
         </View>
@@ -219,52 +219,52 @@ const GamePage: React.FC = () => {
     }
   
 return (
-  <View style={styles.container}>
-    <View style={styles.copyrightContainer}>
-      <Text style={styles.copyrightText}>
+  <View style={game_styles.container}>
+    <View style={game_styles.copyrightContainer}>
+      <Text style={game_styles.copyrightText}>
         © {new Date().getFullYear()} Tüm hakları MBM'ye aittir.
       </Text>
     </View>
-    <TouchableOpacity style={styles.backButton} onPress={handleGoBack}>
+    <TouchableOpacity style={game_styles.backButton} onPress={handleGoBack}>
       <Ionicons name="arrow-back" size={24} color="black" />
-      <Text style={styles.backButtonText}>Menüye Dön</Text>
+      <Text style={game_styles.backButtonText}>Menüye Dön</Text>
     </TouchableOpacity>
-    <View style={styles.highScoreContainer}>
-      <Text style={styles.highScoreText}>En Yüksek Skor: {highScore}</Text>
+    <View style={game_styles.highScoreContainer}>
+      <Text style={game_styles.highScoreText}>En Yüksek Skor: {highScore}</Text>
     </View>
-    <View style={styles.topInfoContainer}>
-      <Text style={styles.infoText}>Skor: {score}</Text>
-      <View style={styles.progressBarContainer}>
+    <View style={game_styles.topInfoContainer}>
+      <Text style={game_styles.infoText}>Skor: {score}</Text>
+      <View style={game_styles.progressBarContainer}>
         <View             style={[
-              styles.progressBar, 
+              game_styles.progressBar, 
               { width: `${progressWidth}%`, backgroundColor: progressColor }
             ]} />
       </View>
-      <Text style={styles.infoText}>Süre: {timeLeft}</Text>
+      <Text style={game_styles.infoText}>Süre: {timeLeft}</Text>
     </View>
-    <View style={styles.livesContainer}>
+    <View style={game_styles.livesContainer}>
       {[...Array(3)].map((_, index) => (
-        <View key={index} style={styles.heartContainer}>
+        <View key={index} style={game_styles.heartContainer}>
           <HeartIcon filled={index < lives} />
         </View>
       ))}
     </View>
-    <Text style={styles.word}>{currentWord}</Text>
-    <View style={styles.optionsContainer}>
-      <View style={styles.optionsRow}>
-        <TouchableOpacity style={styles.optionButton} onPress={() => handleOptionSelect(options[0])}>
-          <Text style={styles.optionText}>{options[0]?.word || 'Seçenek 1'}</Text>
+    <Text style={game_styles.word}>{currentWord}</Text>
+    <View style={game_styles.optionsContainer}>
+      <View style={game_styles.optionsRow}>
+        <TouchableOpacity style={game_styles.optionButton} onPress={() => handleOptionSelect(options[0])}>
+          <Text style={game_styles.optionText}>{options[0]?.word || 'Seçenek 1'}</Text>
         </TouchableOpacity>
-        <TouchableOpacity style={styles.optionButton} onPress={() => handleOptionSelect(options[1])}>
-          <Text style={styles.optionText}>{options[1]?.word || 'Seçenek 2'}</Text>
+        <TouchableOpacity style={game_styles.optionButton} onPress={() => handleOptionSelect(options[1])}>
+          <Text style={game_styles.optionText}>{options[1]?.word || 'Seçenek 2'}</Text>
         </TouchableOpacity>
       </View>
-      <View style={styles.optionsRow}>
-        <TouchableOpacity style={styles.optionButton} onPress={() => handleOptionSelect(options[2])}>
-          <Text style={styles.optionText}>{options[2]?.word || 'Seçenek 3'}</Text>
+      <View style={game_styles.optionsRow}>
+        <TouchableOpacity style={game_styles.optionButton} onPress={() => handleOptionSelect(options[2])}>
+          <Text style={game_styles.optionText}>{options[2]?.word || 'Seçenek 3'}</Text>
         </TouchableOpacity>
-        <TouchableOpacity style={styles.optionButton} onPress={() => handleOptionSelect(options[3])}>
-          <Text style={styles.optionText}>{options[3]?.word || 'Seçenek 4'}</Text>
+        <TouchableOpacity style={game_styles.optionButton} onPress={() => handleOptionSelect(options[3])}>
+          <Text style={game_styles.optionText}>{options[3]?.word || 'Seçenek 4'}</Text>
         </TouchableOpacity>
       </View>
     </View>
@@ -273,15 +273,15 @@ return (
       transparent={true}
       animationType="fade"
     >
-      <View style={styles.modalContainer}>
-        <View style={styles.modalContent}>
-          <Text style={styles.modalTitle}>Oyun Bitti!</Text>
-          <Text style={styles.modalScore}>Skorunuz: {score}</Text>
-          <TouchableOpacity style={styles.modalButton} onPress={resetGame}>
-            <Text style={styles.modalButtonText}>Yeniden Başla</Text>
+      <View style={game_styles.modalContainer}>
+        <View style={game_styles.modalContent}>
+          <Text style={game_styles.modalTitle}>Oyun Bitti!</Text>
+          <Text style={game_styles.modalScore}>Skorunuz: {score}</Text>
+          <TouchableOpacity style={game_styles.modalButton} onPress={resetGame}>
+            <Text style={game_styles.modalButtonText}>Yeniden Başla</Text>
           </TouchableOpacity>
-          <TouchableOpacity style={styles.modalButton} onPress={handleGoToMainMenu}>
-            <Text style={styles.modalButtonText}>Ana Menüye Dön</Text>
+          <TouchableOpacity style={game_styles.modalButton} onPress={handleGoToMainMenu}>
+            <Text style={game_styles.modalButtonText}>Ana Menüye Dön</Text>
           </TouchableOpacity>
         </View>
       </View>
