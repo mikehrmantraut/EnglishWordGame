@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback} from 'react';
+import React, { useState, useEffect, useCallback, useRef} from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, ActivityIndicator, Modal, Animated } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
@@ -30,12 +30,19 @@ const GamePage: React.FC = () => {
     const [progressColor, setProgressColor] = useState('green');
     const [multiplier, setMultiplier] = useState(1);
     const [showMultiplier, setShowMultiplier] = useState(false);
-    const fadeAnim = useState(new Animated.Value(0))[0];
     const [questionCount, setQuestionCount] = useState(0);
+    const timerRef = useRef<NodeJS.Timeout | null>(null);
     const handleGoBack = () => {
       router.back();
     };
 
+    const resetProgressAndMultiplier = () => {
+      setMultiplier(1);
+      setShowMultiplier(false);
+      setProgressWidth(0);
+      setProgressColor('green');
+      setQuestionCount(0);
+    };
     const getHighScore = async () => {
       try {
         const value = await AsyncStorage.getItem('highScore');
@@ -94,37 +101,15 @@ const GamePage: React.FC = () => {
     
       return allOptions.sort(() => Math.random() - 0.5);
     };
-  
+    const endGame = () => {
+      setIsGameOver(true);
+      if (timer) clearInterval(timer);
+      updateHighScore(score);
+    };
     const startTimer = useCallback(() => {
-      if (timer) clearInterval(timer);
+      if (timerRef.current) clearInterval(timerRef.current);
       setTimeLeft(QUESTION_TIME);
-      const newTimer = setInterval(() => {
-        setTimeLeft((prevTime) => {
-          if (prevTime <= 1) {
-            clearInterval(newTimer);
-            handleTimerExpired();
-            return 0;
-          }
-          return prevTime - 1;
-        });
-      }, 1000);
-      setTimer(newTimer);
     }, []);
-  
-    const handleTimerExpired = useCallback(() => {
-      if (timer) clearInterval(timer);
-      setLives(prevLives => {
-        const newLives = prevLives - 1;
-        if (newLives <= 0) {
-          endGame();
-          return 0;
-        } else {
-          fetchNextQuestion();
-          return newLives;
-        }
-      });
-    }, [timer]);
-  
     const fetchNextQuestion = useCallback(async () => {
       if (timer) clearInterval(timer);
       const newWord = getRandomWord();
@@ -136,6 +121,38 @@ const GamePage: React.FC = () => {
       }
       startTimer();
     }, [timer, startTimer, progressWidth]);
+    const handleTimerExpired = useCallback(() => {
+      if (timerRef.current) clearInterval(timerRef.current);
+      setLives(prevLives => {
+        const newLives = prevLives - 1;
+        if (newLives <= 0) {
+          endGame();
+          return 0;
+        } else {
+          fetchNextQuestion();
+          resetProgressAndMultiplier();
+          return newLives;
+        }
+      });
+    }, [fetchNextQuestion, endGame]);
+    useEffect(() => {
+      if (timeLeft > 0) {
+        timerRef.current = setInterval(() => {
+          setTimeLeft((prevTime) => {
+            if (prevTime <= 1) {
+              if (timerRef.current) clearInterval(timerRef.current);
+              handleTimerExpired();
+              return 0;
+            }
+            return prevTime - 1;
+          });
+        }, 1000);
+      }
+  
+      return () => {
+        if (timerRef.current) clearInterval(timerRef.current);
+      };
+    }, [timeLeft, handleTimerExpired]);
 
     const updateProgress = () => {
       setProgressWidth(prevWidth => {
@@ -147,37 +164,14 @@ const GamePage: React.FC = () => {
         else setProgressColor('#C71585');
   
         if (newWidth >= 100 && questionCount >= 5) {
-          setTimeout(() => {
-            setMultiplier(2);
+          setMultiplier(2);
           setShowMultiplier(true);
-          fadeInMultiplier();
-          setTimeout(() => {
-            setShowMultiplier(false);
-            fadeOutMultiplier();
-            setProgressWidth(0);
-          }, 2000);
-        }, 500);
-        return 100;
-        }
+        return 0;
+      }
         return newWidth;
       });
     };
 
-   const fadeInMultiplier = () => {
-    Animated.timing(fadeAnim, {
-      toValue: 1,
-      duration: 500,
-      useNativeDriver: true,
-    }).start();
-  };
-
-  const fadeOutMultiplier = () => {
-    Animated.timing(fadeAnim, {
-      toValue: 0,
-      duration: 500,
-      useNativeDriver: true,
-    }).start();
-  };
 
     const handleOptionSelect = useCallback(async (selectedOption: Option) => {
       if (timer) clearInterval(timer);
@@ -194,6 +188,7 @@ const GamePage: React.FC = () => {
             return 0;
           } else {
             fetchNextQuestion();
+            resetProgressAndMultiplier(); // Reset progress and multiplier on wrong answer
             return newLives;
           }
         });
@@ -211,10 +206,7 @@ const GamePage: React.FC = () => {
       setScore(0);
       setIsGameOver(false);
       setTimeLeft(QUESTION_TIME);
-      setMultiplier(1);
-      setProgressWidth(0);
-      setProgressColor('green');
-      setQuestionCount(0);
+      resetProgressAndMultiplier(); // Use the new function here
       if (timer) clearInterval(timer);
       fetchNextQuestion();
     }, []);;
@@ -224,12 +216,6 @@ const GamePage: React.FC = () => {
       initializeGame();
     };
     
-    const endGame = () => {
-      setIsGameOver(true);
-      if (timer) clearInterval(timer);
-      updateHighScore(score);
-    };
-
     useEffect(() => {
       getHighScore();
       initializeGame();
@@ -327,9 +313,9 @@ const GamePage: React.FC = () => {
           </View>
         </Modal>
         {showMultiplier && (
-          <Animated.View style={[game_styles.multiplierContainer, { opacity: fadeAnim }]}>
+          <View style={game_styles.multiplierContainer}>
             <Text style={game_styles.multiplierText}>2x</Text>
-          </Animated.View>
+          </View>
         )}
       </View>
     );
