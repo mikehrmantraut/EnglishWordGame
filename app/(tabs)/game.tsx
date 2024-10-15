@@ -31,6 +31,7 @@ const GamePage: React.FC = () => {
     const [multiplier, setMultiplier] = useState(1);
     const [showMultiplier, setShowMultiplier] = useState(false);
     const fadeAnim = useState(new Animated.Value(0))[0];
+    const [questionCount, setQuestionCount] = useState(0);
     const handleGoBack = () => {
       router.back();
     };
@@ -145,7 +146,7 @@ const GamePage: React.FC = () => {
         else if (newWidth <= 80) setProgressColor('red');
         else setProgressColor('#C71585');
   
-        if (newWidth >= 100) {
+        if (newWidth >= 100 && questionCount >= 5) {
           setTimeout(() => {
             setMultiplier(2);
           setShowMultiplier(true);
@@ -182,6 +183,7 @@ const GamePage: React.FC = () => {
       if (timer) clearInterval(timer);
       if (selectedOption.isCorrect) {
         setScore(prevScore => prevScore + gameSettings.pointsPerCorrectAnswer * multiplier);
+        setQuestionCount(prevCount => prevCount + 1);
         updateProgress();
         await fetchNextQuestion();
       } else {
@@ -212,6 +214,7 @@ const GamePage: React.FC = () => {
       setMultiplier(1);
       setProgressWidth(0);
       setProgressColor('green');
+      setQuestionCount(0);
       if (timer) clearInterval(timer);
       fetchNextQuestion();
     }, []);;

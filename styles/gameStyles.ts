@@ -1,4 +1,7 @@
-import { StyleSheet } from 'react-native';
+import { StyleSheet, Dimensions } from 'react-native';
+
+const { width, height } = Dimensions.get('window');
+
 export const game_styles = StyleSheet.create({
     container: {
       flex: 1,
@@ -52,28 +55,33 @@ export const game_styles = StyleSheet.create({
       fontSize: 50,
       fontWeight: 'bold',
       textAlign: 'center',
+      marginTop: -height * 0.2,
     },
     optionsContainer: {
-      width: '100%',
-      paddingHorizontal: 20,
+      position: 'absolute',
+      bottom: 20, // Ekranın en altından biraz yukarıda
+      width: width,
+      height: height * 0.35, // Ekran yüksekliğinin %40'ı kadar
+      paddingHorizontal: 10,
     },
     optionsRow: {
       flexDirection: 'row',
       justifyContent: 'space-between',
-      marginBottom: 10,
+      marginBottom: 10, // Satırlar arası boşluk
+      height: '45%', // Her satır, container'ın yaklaşık yarısı kadar
     },
     optionButton: {
       backgroundColor: 'purple',
-      padding: 25,
-      top: 150,
       borderRadius: 10,
-      width: '48%',
+      width: '49%', // Her buton, satırın yaklaşık yarısı kadar
+      justifyContent: 'center',
       alignItems: 'center',
     },
     optionText: {
       fontSize: 18,
       fontWeight: 'bold',
-      color: 'white'
+      color: 'white',
+      textAlign: 'center',
     },
     modalContainer: {
       flex: 1,
@@ -161,9 +169,8 @@ export const game_styles = StyleSheet.create({
       },
       multiplierContainer: {
         position: 'absolute',
-        top: '50%',
-        left: '50%',
-        transform: [{ translateX: -25 }, { translateY: -25 }],
+        top: height * 0.25, // Progress bar'ın altına yerleştirmek için üstten mesafe ayarlandı
+        alignSelf: 'center',
         backgroundColor: 'red',
         borderRadius: 25,
         width: 50,
