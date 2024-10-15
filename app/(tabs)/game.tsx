@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback} from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, ActivityIndicator, Modal } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, ActivityIndicator, Modal, Animated } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import Svg, { Path } from 'react-native-svg';
@@ -28,7 +28,9 @@ const GamePage: React.FC = () => {
     const [highScore, setHighScore] = useState(0);
     const [progressWidth, setProgressWidth] = useState(0);
     const [progressColor, setProgressColor] = useState('green');
-  
+    const [multiplier, setMultiplier] = useState(1);
+    const [showMultiplier, setShowMultiplier] = useState(false);
+    const fadeAnim = useState(new Animated.Value(0))[0];
     const handleGoBack = () => {
       router.back();
     };
@@ -130,6 +132,7 @@ const GamePage: React.FC = () => {
       setOptions(newOptions);
       startTimer();
     }, [timer, startTimer]);
+
     const updateProgress = () => {
       setProgressWidth(prevWidth => {
         const newWidth = prevWidth + 20;
@@ -138,14 +141,44 @@ const GamePage: React.FC = () => {
         else if (newWidth <= 60) setProgressColor('orange');
         else if (newWidth <= 80) setProgressColor('red');
         else setProgressColor('#C71585');
-        return newWidth > 100 ? 100 : newWidth;
+  
+        if (newWidth >= 100) {
+          setTimeout(() => {
+            setMultiplier(2);
+          setShowMultiplier(true);
+          fadeInMultiplier();
+          setTimeout(() => {
+            setShowMultiplier(false);
+            fadeOutMultiplier();
+            setProgressWidth(0);
+          }, 2000);
+        }, 500);
+        return 100;
+        }
+        return newWidth;
       });
     };
-  
+
+   const fadeInMultiplier = () => {
+    Animated.timing(fadeAnim, {
+      toValue: 1,
+      duration: 500,
+      useNativeDriver: true,
+    }).start();
+  };
+
+  const fadeOutMultiplier = () => {
+    Animated.timing(fadeAnim, {
+      toValue: 0,
+      duration: 500,
+      useNativeDriver: true,
+    }).start();
+  };
+
     const handleOptionSelect = useCallback(async (selectedOption: Option) => {
       if (timer) clearInterval(timer);
       if (selectedOption.isCorrect) {
-        setScore(prevScore => prevScore + gameSettings.pointsPerCorrectAnswer);
+        setScore(prevScore => prevScore + gameSettings.pointsPerCorrectAnswer * multiplier);
         updateProgress();
         await fetchNextQuestion();
       } else {
@@ -160,7 +193,7 @@ const GamePage: React.FC = () => {
           }
         });
       }
-    }, [timer, fetchNextQuestion]);
+    }, [timer, fetchNextQuestion, multiplier]);
     
     useEffect(() => {
       return () => {
@@ -173,6 +206,9 @@ const GamePage: React.FC = () => {
       setScore(0);
       setIsGameOver(false);
       setTimeLeft(QUESTION_TIME);
+      setMultiplier(1);
+      setProgressWidth(0);
+      setProgressColor('green');
       if (timer) clearInterval(timer);
       fetchNextQuestion();
     }, []);;
@@ -180,8 +216,6 @@ const GamePage: React.FC = () => {
     const resetGame = () => {
       setIsGameOver(false);
       initializeGame();
-      setProgressWidth(0);
-      setProgressColor('green');
     };
     
     const endGame = () => {
@@ -218,76 +252,81 @@ const GamePage: React.FC = () => {
       );
     }
   
-return (
-  <View style={game_styles.container}>
-    <View style={game_styles.copyrightContainer}>
-      <Text style={game_styles.copyrightText}>
-        © {new Date().getFullYear()} Tüm hakları MBM'ye aittir.
-      </Text>
-    </View>
-    <TouchableOpacity style={game_styles.backButton} onPress={handleGoBack}>
-      <Ionicons name="arrow-back" size={24} color="black" />
-      <Text style={game_styles.backButtonText}>Menüye Dön</Text>
-    </TouchableOpacity>
-    <View style={game_styles.highScoreContainer}>
-      <Text style={game_styles.highScoreText}>En Yüksek Skor: {highScore}</Text>
-    </View>
-    <View style={game_styles.topInfoContainer}>
-      <Text style={game_styles.infoText}>Skor: {score}</Text>
-      <View style={game_styles.progressBarContainer}>
-        <View             style={[
+    return (
+      <View style={game_styles.container}>
+        <View style={game_styles.copyrightContainer}>
+          <Text style={game_styles.copyrightText}>
+            © {new Date().getFullYear()} Tüm hakları MBM'ye aittir.
+          </Text>
+        </View>
+        <TouchableOpacity style={game_styles.backButton} onPress={handleGoBack}>
+          <Ionicons name="arrow-back" size={24} color="black" />
+          <Text style={game_styles.backButtonText}>Menüye Dön</Text>
+        </TouchableOpacity>
+        <View style={game_styles.highScoreContainer}>
+          <Text style={game_styles.highScoreText}>En Yüksek Skor: {highScore}</Text>
+        </View>
+        <View style={game_styles.topInfoContainer}>
+          <Text style={game_styles.infoText}>Skor: {score}</Text>
+          <View style={game_styles.progressBarContainer}>
+            <View style={[
               game_styles.progressBar, 
               { width: `${progressWidth}%`, backgroundColor: progressColor }
             ]} />
-      </View>
-      <Text style={game_styles.infoText}>Süre: {timeLeft}</Text>
-    </View>
-    <View style={game_styles.livesContainer}>
-      {[...Array(3)].map((_, index) => (
-        <View key={index} style={game_styles.heartContainer}>
-          <HeartIcon filled={index < lives} />
+          </View>
+          <Text style={game_styles.infoText}>Süre: {timeLeft}</Text>
         </View>
-      ))}
-    </View>
-    <Text style={game_styles.word}>{currentWord}</Text>
-    <View style={game_styles.optionsContainer}>
-      <View style={game_styles.optionsRow}>
-        <TouchableOpacity style={game_styles.optionButton} onPress={() => handleOptionSelect(options[0])}>
-          <Text style={game_styles.optionText}>{options[0]?.word || 'Seçenek 1'}</Text>
-        </TouchableOpacity>
-        <TouchableOpacity style={game_styles.optionButton} onPress={() => handleOptionSelect(options[1])}>
-          <Text style={game_styles.optionText}>{options[1]?.word || 'Seçenek 2'}</Text>
-        </TouchableOpacity>
-      </View>
-      <View style={game_styles.optionsRow}>
-        <TouchableOpacity style={game_styles.optionButton} onPress={() => handleOptionSelect(options[2])}>
-          <Text style={game_styles.optionText}>{options[2]?.word || 'Seçenek 3'}</Text>
-        </TouchableOpacity>
-        <TouchableOpacity style={game_styles.optionButton} onPress={() => handleOptionSelect(options[3])}>
-          <Text style={game_styles.optionText}>{options[3]?.word || 'Seçenek 4'}</Text>
-        </TouchableOpacity>
-      </View>
-    </View>
-    <Modal
-      visible={isGameOver}
-      transparent={true}
-      animationType="fade"
-    >
-      <View style={game_styles.modalContainer}>
-        <View style={game_styles.modalContent}>
-          <Text style={game_styles.modalTitle}>Oyun Bitti!</Text>
-          <Text style={game_styles.modalScore}>Skorunuz: {score}</Text>
-          <TouchableOpacity style={game_styles.modalButton} onPress={resetGame}>
-            <Text style={game_styles.modalButtonText}>Yeniden Başla</Text>
-          </TouchableOpacity>
-          <TouchableOpacity style={game_styles.modalButton} onPress={handleGoToMainMenu}>
-            <Text style={game_styles.modalButtonText}>Ana Menüye Dön</Text>
-          </TouchableOpacity>
+        <View style={game_styles.livesContainer}>
+          {[...Array(3)].map((_, index) => (
+            <View key={index} style={game_styles.heartContainer}>
+              <HeartIcon filled={index < lives} />
+            </View>
+          ))}
         </View>
+        <Text style={game_styles.word}>{currentWord}</Text>
+        <View style={game_styles.optionsContainer}>
+          <View style={game_styles.optionsRow}>
+            <TouchableOpacity style={game_styles.optionButton} onPress={() => handleOptionSelect(options[0])}>
+              <Text style={game_styles.optionText}>{options[0]?.word || 'Seçenek 1'}</Text>
+            </TouchableOpacity>
+            <TouchableOpacity style={game_styles.optionButton} onPress={() => handleOptionSelect(options[1])}>
+              <Text style={game_styles.optionText}>{options[1]?.word || 'Seçenek 2'}</Text>
+            </TouchableOpacity>
+          </View>
+          <View style={game_styles.optionsRow}>
+            <TouchableOpacity style={game_styles.optionButton} onPress={() => handleOptionSelect(options[2])}>
+              <Text style={game_styles.optionText}>{options[2]?.word || 'Seçenek 3'}</Text>
+            </TouchableOpacity>
+            <TouchableOpacity style={game_styles.optionButton} onPress={() => handleOptionSelect(options[3])}>
+              <Text style={game_styles.optionText}>{options[3]?.word || 'Seçenek 4'}</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+        <Modal
+          visible={isGameOver}
+          transparent={true}
+          animationType="fade"
+        >
+          <View style={game_styles.modalContainer}>
+            <View style={game_styles.modalContent}>
+              <Text style={game_styles.modalTitle}>Oyun Bitti!</Text>
+              <Text style={game_styles.modalScore}>Skorunuz: {score}</Text>
+              <TouchableOpacity style={game_styles.modalButton} onPress={resetGame}>
+                <Text style={game_styles.modalButtonText}>Yeniden Başla</Text>
+              </TouchableOpacity>
+              <TouchableOpacity style={game_styles.modalButton} onPress={handleGoToMainMenu}>
+                <Text style={game_styles.modalButtonText}>Ana Menüye Dön</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </Modal>
+        {showMultiplier && (
+          <Animated.View style={[game_styles.multiplierContainer, { opacity: fadeAnim }]}>
+            <Text style={game_styles.multiplierText}>2x</Text>
+          </Animated.View>
+        )}
       </View>
-    </Modal>
-  </View>
-);
+    );
   };
 
 export default GamePage;

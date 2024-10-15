@@ -159,4 +159,21 @@ export const game_styles = StyleSheet.create({
         backgroundColor: 'green', // Bu rengi ileride değiştirebilirsiniz
         width: '0%', // Şimdilik 0%, ileride dinamik olarak ayarlanacak
       },
+      multiplierContainer: {
+        position: 'absolute',
+        top: '50%',
+        left: '50%',
+        transform: [{ translateX: -25 }, { translateY: -25 }],
+        backgroundColor: 'red',
+        borderRadius: 25,
+        width: 50,
+        height: 50,
+        justifyContent: 'center',
+        alignItems: 'center',
+      },
+      multiplierText: {
+        color: 'white',
+        fontSize: 24,
+        fontWeight: 'bold',
+      }
   });
