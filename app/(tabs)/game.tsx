@@ -130,8 +130,11 @@ const GamePage: React.FC = () => {
       setCurrentWord(newWord);
       const newOptions = await generateOptions(newWord);
       setOptions(newOptions);
+      if (progressWidth >= 100) {
+        setProgressWidth(0); // Yeni soru geldiğinde barı sıfırla
+      }
       startTimer();
-    }, [timer, startTimer]);
+    }, [timer, startTimer, progressWidth]);
 
     const updateProgress = () => {
       setProgressWidth(prevWidth => {
