@@ -41,6 +41,7 @@ export const game_styles = StyleSheet.create({
       backgroundColor: 'rgba(255, 255, 255, 0.8)',
       padding: 10,
       borderRadius: 10,
+      alignItems: 'center'
     },
     timerContainer: {
       backgroundColor: 'rgba(255, 255, 255, 0.8)',
@@ -182,5 +183,10 @@ export const game_styles = StyleSheet.create({
         color: 'white',
         fontSize: 24,
         fontWeight: 'bold',
+      },
+      scoreIncrementText: {
+        color: 'green', // Set the text color to green
+        fontSize: 16,   // Set the font size
+        fontWeight: 'bold', // Make the text bold
       }
   });

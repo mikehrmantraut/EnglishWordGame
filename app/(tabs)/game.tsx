@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback, useRef} from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, ActivityIndicator, Modal, Animated } from 'react-native';
+import { View, Text, TouchableOpacity, ActivityIndicator, Modal} from 'react-native';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import Svg, { Path } from 'react-native-svg';
@@ -32,6 +32,7 @@ const GamePage: React.FC = () => {
     const [showMultiplier, setShowMultiplier] = useState(false);
     const [questionCount, setQuestionCount] = useState(0);
     const timerRef = useRef<NodeJS.Timeout | null>(null);
+    const [scoreIncrement, setScoreIncrement] = useState<number | null>(null);
     const handleGoBack = () => {
       router.back();
     };
@@ -176,10 +177,15 @@ const GamePage: React.FC = () => {
     const handleOptionSelect = useCallback(async (selectedOption: Option) => {
       if (timer) clearInterval(timer);
       if (selectedOption.isCorrect) {
-        setScore(prevScore => prevScore + gameSettings.pointsPerCorrectAnswer * multiplier);
+        const points = gameSettings.pointsPerCorrectAnswer * multiplier;
+        setScore(prevScore => prevScore + points);
+        setScoreIncrement(points); // Set the score increment to display
         setQuestionCount(prevCount => prevCount + 1);
         updateProgress();
         await fetchNextQuestion();
+        setTimeout(() => {
+          setScoreIncrement(null);
+        }, 1000);
       } else {
         setLives(prevLives => {
           const newLives = prevLives - 1;
@@ -260,6 +266,7 @@ const GamePage: React.FC = () => {
         </View>
         <View style={game_styles.topInfoContainer}>
           <Text style={game_styles.infoText}>Skor: {score}</Text>
+          {scoreIncrement !== null && (<Text style = {game_styles.scoreIncrementText}>+{scoreIncrement}</Text>)}
           <View style={game_styles.progressBarContainer}>
             <View style={[
               game_styles.progressBar, 
