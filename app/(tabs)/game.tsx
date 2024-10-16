@@ -164,7 +164,7 @@ const GamePage: React.FC = () => {
         else setProgressColor('#C71585');
   
         if (newWidth >= 100 && questionCount >= 5) {
-          setMultiplier(2);
+          setMultiplier(prevMultiplier => prevMultiplier + 1);
           setShowMultiplier(true);
         return 0;
       }
@@ -314,7 +314,7 @@ const GamePage: React.FC = () => {
         </Modal>
         {showMultiplier && (
           <View style={game_styles.multiplierContainer}>
-            <Text style={game_styles.multiplierText}>2x</Text>
+            <Text style={game_styles.multiplierText}>{multiplier}x</Text>
           </View>
         )}
       </View>
