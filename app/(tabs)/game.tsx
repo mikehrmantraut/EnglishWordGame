@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback, useRef} from 'react';
 import { View, Text, TouchableOpacity, ActivityIndicator, Modal} from 'react-native';
 import { useRouter } from 'expo-router';
-import { Ionicons } from '@expo/vector-icons';
+import { Ionicons, MaterialIcons } from '@expo/vector-icons';
 import Svg, { Path } from 'react-native-svg';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useFocusEffect } from '@react-navigation/native';
@@ -33,10 +33,27 @@ const GamePage: React.FC = () => {
     const [questionCount, setQuestionCount] = useState(0);
     const timerRef = useRef<NodeJS.Timeout | null>(null);
     const [scoreIncrement, setScoreIncrement] = useState<number | null>(null);
+    const [isPaused, setIsPaused] = useState(false);
+
     const handleGoBack = () => {
       router.back();
     };
 
+    const handlePauseGame = () => {
+      setIsPaused(true);
+      if (timerRef.current) clearInterval(timerRef.current);
+  };
+    const handleContinueGame = () => {
+    setIsPaused(false);
+    startTimer(); // Restart the timer
+  };
+
+  const handleGoToMainMenu = () => {
+    setIsGameOver(false);
+    setIsPaused(false);
+    if (timerRef.current) clearInterval(timerRef.current);
+    router.replace('/'); // Navigate to the main menu
+  };
     const resetProgressAndMultiplier = () => {
       setMultiplier(1);
       setShowMultiplier(false);
@@ -53,11 +70,6 @@ const GamePage: React.FC = () => {
       } catch (error) {
         console.error('Error reading high score:', error);
       }
-    };
-    const handleGoToMainMenu = () => {
-      setIsGameOver(false); // Modal'ı kapat
-      if (timer) clearInterval(timer);
-      router.replace('/');  // Ana menü sayfasının yolunu buraya yazın
     };
     const updateHighScore = async (newScore: number) => {
       if (newScore > highScore) {
@@ -108,20 +120,30 @@ const GamePage: React.FC = () => {
       updateHighScore(score);
     };
     const startTimer = useCallback(() => {
-      if (timerRef.current) clearInterval(timerRef.current);
-      setTimeLeft(QUESTION_TIME);
-    }, []);
-    const fetchNextQuestion = useCallback(async () => {
-      if (timer) clearInterval(timer);
-      const newWord = getRandomWord();
-      setCurrentWord(newWord);
-      const newOptions = await generateOptions(newWord);
-      setOptions(newOptions);
-      if (progressWidth >= 100) {
+      if (timerRef.current) clearInterval(timerRef.current); // Önceki timer'ı temizle
+      timerRef.current = setInterval(() => {
+          setTimeLeft((prevTime) => {
+              if (prevTime <= 1) {
+                  if (timerRef.current) clearInterval(timerRef.current);
+                  handleTimerExpired();
+                  return 0;
+              }
+              return prevTime - 1;
+          });
+      }, 1000);
+  }, []);
+  const fetchNextQuestion = useCallback(async () => {
+    const newWord = getRandomWord();
+    setCurrentWord(newWord);
+    const newOptions = await generateOptions(newWord);
+    setOptions(newOptions);
+    if (progressWidth >= 100) {
         setProgressWidth(0); // Yeni soru geldiğinde barı sıfırla
-      }
-      startTimer();
-    }, [timer, startTimer, progressWidth]);
+    }
+    if (!isPaused) { // Sadece oyun duraklatılmadıysa timer'ı başlat
+        startTimer();
+    }
+}, [startTimer, progressWidth, isPaused]);
     const handleTimerExpired = useCallback(() => {
       if (timerRef.current) clearInterval(timerRef.current);
       setLives(prevLives => {
@@ -137,23 +159,23 @@ const GamePage: React.FC = () => {
       });
     }, [fetchNextQuestion, endGame]);
     useEffect(() => {
-      if (timeLeft > 0) {
-        timerRef.current = setInterval(() => {
-          setTimeLeft((prevTime) => {
-            if (prevTime <= 1) {
-              if (timerRef.current) clearInterval(timerRef.current);
-              handleTimerExpired();
-              return 0;
-            }
-            return prevTime - 1;
-          });
-        }, 1000);
+      if (timeLeft > 0 && !isPaused) { // Süre duraklatılmadıysa timer'ı başlat
+          timerRef.current = setInterval(() => {
+              setTimeLeft((prevTime) => {
+                  if (prevTime <= 1) {
+                      if (timerRef.current) clearInterval(timerRef.current);
+                      handleTimerExpired();
+                      return 0;
+                  }
+                  return prevTime - 1;
+              });
+          }, 1000);
       }
   
       return () => {
-        if (timerRef.current) clearInterval(timerRef.current);
+          if (timerRef.current) clearInterval(timerRef.current);
       };
-    }, [timeLeft, handleTimerExpired]);
+  }, [timeLeft, handleTimerExpired, isPaused]);
 
     const updateProgress = () => {
       setProgressWidth(prevWidth => {
@@ -175,31 +197,35 @@ const GamePage: React.FC = () => {
 
 
     const handleOptionSelect = useCallback(async (selectedOption: Option) => {
-      if (timer) clearInterval(timer);
+      if (timerRef.current) clearInterval(timerRef.current); // Timer'ı durdur
       if (selectedOption.isCorrect) {
-        const points = gameSettings.pointsPerCorrectAnswer * multiplier;
-        setScore(prevScore => prevScore + points);
-        setScoreIncrement(points); // Set the score increment to display
-        setQuestionCount(prevCount => prevCount + 1);
-        updateProgress();
-        await fetchNextQuestion();
-        setTimeout(() => {
-          setScoreIncrement(null);
-        }, 1000);
+          const points = gameSettings.pointsPerCorrectAnswer * multiplier;
+          setScore(prevScore => prevScore + points);
+          setScoreIncrement(points); // Set the score increment to display
+          setQuestionCount(prevCount => prevCount + 1);
+          updateProgress();
+          
+          // Süreyi 5 saniye olarak ayarla
+          setTimeLeft(QUESTION_TIME); // QUESTION_TIME, 5 saniye olmalı
+          await fetchNextQuestion();
+          
+          setTimeout(() => {
+              setScoreIncrement(null);
+          }, 1000);
       } else {
-        setLives(prevLives => {
-          const newLives = prevLives - 1;
-          if (newLives <= 0) {
-            endGame();
-            return 0;
-          } else {
-            fetchNextQuestion();
-            resetProgressAndMultiplier(); // Reset progress and multiplier on wrong answer
-            return newLives;
-          }
-        });
+          setLives(prevLives => {
+              const newLives = prevLives - 1;
+              if (newLives <= 0) {
+                  endGame();
+                  return 0;
+              } else {
+                  fetchNextQuestion();
+                  resetProgressAndMultiplier(); // Yanlış cevapta ilerlemeyi sıfırla
+                  return newLives;
+              }
+          });
       }
-    }, [timer, fetchNextQuestion, multiplier]);
+  }, [fetchNextQuestion, multiplier]);
     
     useEffect(() => {
       return () => {
@@ -252,6 +278,9 @@ const GamePage: React.FC = () => {
   
     return (
       <View style={game_styles.container}>
+        <TouchableOpacity style={game_styles.pauseButton} onPress={handlePauseGame}>
+          <MaterialIcons name="pause" size={24} color="black" />
+        </TouchableOpacity>
         <View style={game_styles.copyrightContainer}>
           <Text style={game_styles.copyrightText}>
             © {new Date().getFullYear()} Tüm hakları MBM'ye aittir.
@@ -266,7 +295,7 @@ const GamePage: React.FC = () => {
         </View>
         <View style={game_styles.topInfoContainer}>
           <Text style={game_styles.infoText}>Skor: {score}</Text>
-          {scoreIncrement !== null && (<Text style = {game_styles.scoreIncrementText}>+{scoreIncrement}</Text>)}
+          {scoreIncrement !== null && (<Text style={game_styles.scoreIncrementText}>+{scoreIncrement}</Text>)}
           <View style={game_styles.progressBarContainer}>
             <View style={[
               game_styles.progressBar, 
@@ -312,6 +341,19 @@ const GamePage: React.FC = () => {
               <Text style={game_styles.modalScore}>Skorunuz: {score}</Text>
               <TouchableOpacity style={game_styles.modalButton} onPress={resetGame}>
                 <Text style={game_styles.modalButtonText}>Yeniden Başla</Text>
+              </TouchableOpacity>
+              <TouchableOpacity style={game_styles.modalButton} onPress={handleGoToMainMenu}>
+                <Text style={game_styles.modalButtonText}>Ana Menüye Dön</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </Modal>
+        <Modal visible={isPaused} transparent={true} animationType="fade">
+          <View style={game_styles.modalContainer}>
+            <View style={game_styles.modalContent}>
+              <Text style={game_styles.modalTitle}>Oyun Duraklatıldı!</Text>
+              <TouchableOpacity style={game_styles.modalButton} onPress={handleContinueGame}>
+                <Text style={game_styles.modalButtonText}>Devam Et</Text>
               </TouchableOpacity>
               <TouchableOpacity style={game_styles.modalButton} onPress={handleGoToMainMenu}>
                 <Text style={game_styles.modalButtonText}>Ana Menüye Dön</Text>

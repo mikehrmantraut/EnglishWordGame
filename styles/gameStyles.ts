@@ -24,7 +24,7 @@ export const game_styles = StyleSheet.create({
     },
     livesContainer: {
       position: 'absolute',
-      top: 40,
+      top: 100,
       right: 20,
       flexDirection: 'row',
     },
@@ -188,5 +188,11 @@ export const game_styles = StyleSheet.create({
         color: 'green', // Set the text color to green
         fontSize: 16,   // Set the font size
         fontWeight: 'bold', // Make the text bold
-      }
+      },
+      pauseButton: {
+        position: 'absolute',
+        top: 40,
+        right: 20,
+        padding: 10,
+      },
   });
