@@ -6,7 +6,7 @@ import Svg, { Path } from 'react-native-svg';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useFocusEffect } from '@react-navigation/native';
 import { game_styles } from '../../styles/gameStyles';
-import { pre_a1_starters_word_map, gameSettings } from '../../data/languageData';
+import { pre_a1_starters_word_map, a1_movers_word_map, gameSettings } from '../../data/languageData';
 const QUESTION_TIME = gameSettings.defaultQuestionTime; // 5 seconds for each question
 
 
@@ -94,13 +94,15 @@ const GamePage: React.FC = () => {
     );
   
     const getRandomWord = () => {
-      const words = Object.keys(pre_a1_starters_word_map);
+      const currentMap = score >= 5000 ? a1_movers_word_map : pre_a1_starters_word_map;
+      const words = Object.keys(currentMap);
       return words[Math.floor(Math.random() * words.length)];
     };
   
     const generateOptions = async (correctWord: string) => {
-      const correctTranslation = pre_a1_starters_word_map[correctWord];
-      const otherWords = Object.values(pre_a1_starters_word_map).filter(word => word !== correctTranslation);
+      const currentMap = score >= 5000 ? a1_movers_word_map : pre_a1_starters_word_map;
+      const correctTranslation = currentMap[correctWord];
+      const otherWords = Object.values(currentMap).filter(word => word !== correctTranslation);
       const randomWords = [];
       for (let i = 0; i < 3; i++) {
         const randomIndex = Math.floor(Math.random() * otherWords.length);
@@ -215,7 +217,7 @@ const GamePage: React.FC = () => {
       } else {
           setLives(prevLives => {
               const newLives = prevLives - 1;
-              if (newLives <= 0) {
+              if (newLives <= 0 ) {
                   endGame();
                   return 0;
               } else {
