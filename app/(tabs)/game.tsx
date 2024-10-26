@@ -281,11 +281,6 @@ const GamePage: React.FC = () => {
         <TouchableOpacity style={game_styles.pauseButton} onPress={handlePauseGame}>
           <MaterialIcons name="pause" size={24} color="black" />
         </TouchableOpacity>
-        <View style={game_styles.copyrightContainer}>
-          <Text style={game_styles.copyrightText}>
-            © {new Date().getFullYear()} Tüm hakları MBM'ye aittir.
-          </Text>
-        </View>
         <TouchableOpacity style={game_styles.backButton} onPress={handleGoBack}>
           <Ionicons name="arrow-back" size={24} color="black" />
           <Text style={game_styles.backButtonText}>Menüye Dön</Text>

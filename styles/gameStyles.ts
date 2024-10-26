@@ -25,7 +25,7 @@ export const game_styles = StyleSheet.create({
     livesContainer: {
       position: 'absolute',
       top: 100,
-      right: 20,
+      right: 10,
       flexDirection: 'row',
     },
     heartContainer: {
@@ -135,17 +135,6 @@ export const game_styles = StyleSheet.create({
       fontSize: 16,
       fontWeight: 'bold',
       color: 'white'
-    },
-    copyrightContainer: {
-      position: 'absolute',
-      bottom: 10,
-      width: '100%',
-      alignItems: 'center',
-      zIndex: 1000,
-    },
-    copyrightText: {
-      fontSize: 12,
-      color: 'gray',
     },
     topInfoContainer: {
         flexDirection: 'row',
