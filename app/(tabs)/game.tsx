@@ -143,21 +143,21 @@ const GamePage: React.FC = () => {
     if (!isPaused) { // Sadece oyun duraklatılmadıysa timer'ı başlat
         startTimer();
     }
-}, [startTimer, progressWidth, isPaused]);
-    const handleTimerExpired = useCallback(() => {
-      if (timerRef.current) clearInterval(timerRef.current);
-      setLives(prevLives => {
-        const newLives = prevLives - 1;
-        if (newLives <= 0) {
-          endGame();
-          return 0;
-        } else {
-          fetchNextQuestion();
-          resetProgressAndMultiplier();
-          return newLives;
-        }
-      });
-    }, [fetchNextQuestion, endGame]);
+}, [startTimer, progressWidth, isPaused]);const handleTimerExpired = useCallback(() => {
+  if (timerRef.current) clearInterval(timerRef.current);
+  setLives(prevLives => {
+    const newLives = prevLives - 1;
+    if (newLives <= 0) {
+      endGame();
+      return 0;
+    } else {
+      resetProgressAndMultiplier();
+      setTimeLeft(QUESTION_TIME);
+      fetchNextQuestion(); // Yeni soruyu getir
+      return newLives;
+    }
+  });
+}, [fetchNextQuestion, endGame]);
     useEffect(() => {
       if (timeLeft > 0 && !isPaused) { // Süre duraklatılmadıysa timer'ı başlat
           timerRef.current = setInterval(() => {
