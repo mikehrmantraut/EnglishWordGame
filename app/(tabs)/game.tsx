@@ -34,6 +34,8 @@ const GamePage: React.FC = () => {
     const timerRef = useRef<NodeJS.Timeout | null>(null);
     const [scoreIncrement, setScoreIncrement] = useState<number | null>(null);
     const [isPaused, setIsPaused] = useState(false);
+    const [showBravoMessage, setShowBravoMessage] = useState(false);
+    const [isBravoShown, setIsBravoShown] = useState(false);
 
     const handleGoBack = () => {
       router.back();
@@ -47,7 +49,11 @@ const GamePage: React.FC = () => {
     setIsPaused(false);
     startTimer(); // Restart the timer
   };
-
+  const handleContinueAfterBravo = () => {
+    setShowBravoMessage(false); // Mesajı kapat
+    startTimer(); // Timer'ı yeniden başlat
+    setTimeLeft(QUESTION_TIME);
+  };
   const handleGoToMainMenu = () => {
     setIsGameOver(false);
     setIsPaused(false);
@@ -201,33 +207,40 @@ const GamePage: React.FC = () => {
     const handleOptionSelect = useCallback(async (selectedOption: Option) => {
       if (timerRef.current) clearInterval(timerRef.current); // Timer'ı durdur
       if (selectedOption.isCorrect) {
-          const points = gameSettings.pointsPerCorrectAnswer * multiplier;
-          setScore(prevScore => prevScore + points);
-          setScoreIncrement(points); // Set the score increment to display
-          setQuestionCount(prevCount => prevCount + 1);
-          updateProgress();
-          
-          // Süreyi 5 saniye olarak ayarla
-          setTimeLeft(QUESTION_TIME); // QUESTION_TIME, 5 saniye olmalı
-          await fetchNextQuestion();
-          
-          setTimeout(() => {
-              setScoreIncrement(null);
-          }, 1000);
+        const points = gameSettings.pointsPerCorrectAnswer * multiplier;
+        const newScore = score + points; // Skoru hesapla
+    
+        setScore(newScore); 
+        setScoreIncrement(points); 
+        setQuestionCount((prevCount) => prevCount + 1);
+        updateProgress();
+    
+        if (newScore >= 200 && !isBravoShown) {
+          setShowBravoMessage(true); // Bravo mesajını göster
+          setIsBravoShown(true);
+          if (timerRef.current) clearInterval(timerRef.current);
+          return; // Yeni soru getirmeden çık
+        }
+        setTimeLeft(QUESTION_TIME); 
+        await fetchNextQuestion();
+    
+        setTimeout(() => {
+          setScoreIncrement(null);
+        }, 1000);
       } else {
-          setLives(prevLives => {
-              const newLives = prevLives - 1;
-              if (newLives <= 0 ) {
-                  endGame();
-                  return 0;
-              } else {
-                  fetchNextQuestion();
-                  resetProgressAndMultiplier(); // Yanlış cevapta ilerlemeyi sıfırla
-                  return newLives;
-              }
-          });
+        setLives((prevLives) => {
+          const newLives = prevLives - 1;
+          if (newLives <= 0) {
+            endGame();
+            return 0;
+          } else {
+            fetchNextQuestion();
+            resetProgressAndMultiplier(); 
+            return newLives;
+          }
+        });
       }
-  }, [fetchNextQuestion, multiplier]);
+    }, [fetchNextQuestion, multiplier, score, showBravoMessage]);
     
     useEffect(() => {
       return () => {
@@ -239,6 +252,7 @@ const GamePage: React.FC = () => {
       setLives(3);
       setScore(0);
       setIsGameOver(false);
+      setIsBravoShown(false);
       setTimeLeft(QUESTION_TIME);
       resetProgressAndMultiplier(); // Use the new function here
       if (timer) clearInterval(timer);
@@ -341,6 +355,19 @@ const GamePage: React.FC = () => {
               </TouchableOpacity>
               <TouchableOpacity style={game_styles.modalButton} onPress={handleGoToMainMenu}>
                 <Text style={game_styles.modalButtonText}>Ana Menüye Dön</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </Modal>
+        <Modal visible={showBravoMessage} transparent={true} animationType="fade">
+          <View style={game_styles.modalContainer}>
+            <View style={game_styles.modalContent}>
+              <Text style={game_styles.modalTitle}>BRAVO!</Text>
+              <Text style={game_styles.modalText}>
+                Kolay geldi galiba :) Yeni kelimelere hazırlan!
+              </Text>
+              <TouchableOpacity style={game_styles.modalButton} onPress={handleContinueAfterBravo}>
+                <Text style={game_styles.modalButtonText}>Devam Et</Text>
               </TouchableOpacity>
             </View>
           </View>

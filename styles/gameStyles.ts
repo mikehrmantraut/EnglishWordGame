@@ -184,4 +184,11 @@ export const game_styles = StyleSheet.create({
         right: 20,
         padding: 10,
       },
+      modalText: {
+        fontSize: 18,
+        color: '#666',
+        textAlign: 'center',
+        marginBottom: 20,
+        lineHeight: 24,
+      },
   });
