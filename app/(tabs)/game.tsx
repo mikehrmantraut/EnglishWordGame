@@ -215,7 +215,7 @@ const GamePage: React.FC = () => {
         setQuestionCount((prevCount) => prevCount + 1);
         updateProgress();
     
-        if (newScore >= 200 && !isBravoShown) {
+        if (newScore >= 5000 && !isBravoShown) {
           setShowBravoMessage(true); // Bravo mesajını göster
           setIsBravoShown(true);
           if (timerRef.current) clearInterval(timerRef.current);
@@ -257,7 +257,7 @@ const GamePage: React.FC = () => {
       resetProgressAndMultiplier(); // Use the new function here
       if (timer) clearInterval(timer);
       fetchNextQuestion();
-    }, []);;
+    }, []);
 
     const resetGame = () => {
       setIsGameOver(false);
